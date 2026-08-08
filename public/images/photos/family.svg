@@ -1,0 +1,26 @@
+<svg width="900" height="1125" viewBox="0 0 900 1125" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder photograph">
+  <defs>
+    <linearGradient id="grad-family" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4b5a63"/>
+      <stop offset="100%" stop-color="#263238"/>
+    </linearGradient>
+    
+  <filter id="grain-family">
+    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" result="noise"/>
+    <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.045 0"/>
+  </filter>
+  </defs>
+  <rect width="900" height="1125" fill="url(#grad-family)"/>
+  <rect width="900" height="1125" filter="url(#grain-family)" opacity="0.6"/>
+  <g transform="translate(450, 562.5)" opacity="0.92">
+    <g fill="none" stroke="#FFF8F0" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.85">
+    <circle cx="-70" cy="-70" r="34"/>
+    <path d="M-70,-24 C-108,-24 -122,10 -122,60 L-18,60 C-18,10 -32,-24 -70,-24 Z"/>
+    <circle cx="55" cy="-60" r="28"/>
+    <path d="M55,-20 C24,-20 12,8 12,50 L98,50 C98,8 86,-20 55,-20 Z"/>
+    <circle cx="0" cy="30" r="18"/>
+    <path d="M0,54 C-20,54 -28,70 -28,96 L28,96 C28,70 20,54 0,54 Z"/>
+  </g>
+  </g>
+  <rect x="0.5" y="0.5" width="899" height="1124" fill="none" stroke="#FFF8F0" stroke-opacity="0.14" stroke-width="1"/>
+</svg>

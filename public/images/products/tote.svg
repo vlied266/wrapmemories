@@ -1,0 +1,24 @@
+<svg width="900" height="900" viewBox="0 0 900 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder product mockup">
+  <defs>
+    <radialGradient id="bg-tote" cx="50%" cy="42%" r="70%">
+      <stop offset="0%" stop-color="#FFFDF9"/>
+      <stop offset="100%" stop-color="#F3E7D8"/>
+    </radialGradient>
+    <linearGradient id="shade-tote" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.12"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="900" fill="url(#bg-tote)"/>
+  <ellipse cx="450" cy="774" rx="252.00000000000003" ry="31.500000000000004" fill="#263238" opacity="0.12"/>
+  
+  <g transform="translate(450,470)">
+    <path d="M-160,-40 h320 l30,300 h-380 z" fill="#FBF6EE" stroke="#263238" stroke-opacity="0.1" stroke-width="2"/>
+    <path d="M-90,-40 v-60 a90,90 0 0 1 180,0 v60" fill="none" stroke="#263238" stroke-opacity="0.55" stroke-width="14" stroke-linecap="round"/>
+    <rect x="-110" y="10" width="220" height="180" rx="8" fill="#9CC4C0"/>
+    <g stroke="#263238" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.75">
+      <path d="M-70,110 C-70,50 -30,30 0,30 C30,30 70,50 70,110" />
+      <circle cx="0" cy="0" r="34"/>
+    </g>
+  </g>
+</svg>
