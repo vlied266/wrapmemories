@@ -1,0 +1,15 @@
+<svg width="600" height="600" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder stylized artwork">
+  <defs>
+  <filter id="g-style-bold">
+    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" result="noise"/>
+    <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.04 0"/>
+  </filter></defs>
+  <rect width="600" height="600" fill="#263238"/>
+  <rect width="600" height="600" filter="url(#g-style-bold)" opacity="0.5"/>
+  <g transform="translate(300, 300)"><g>
+        <ellipse cx="0" cy="10" rx="150" ry="130" fill="#F26B5B" opacity="0.9"/>
+        <ellipse cx="-50" cy="-30" rx="30" ry="24" fill="#263238" opacity="0.9"/>
+        <ellipse cx="50" cy="-30" rx="30" ry="24" fill="#263238" opacity="0.9"/>
+        <path d="M-40,60 Q0,95 40,60" fill="none" stroke="#263238" stroke-width="8" stroke-linecap="round"/>
+      </g></g>
+</svg>
