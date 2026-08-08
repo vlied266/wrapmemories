@@ -1,0 +1,15 @@
+<svg width="600" height="600" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder stylized artwork">
+  <defs>
+  <filter id="g-style-minimal">
+    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" result="noise"/>
+    <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.04 0"/>
+  </filter></defs>
+  <rect width="600" height="600" fill="#FFF8F0"/>
+  <rect width="600" height="600" filter="url(#g-style-minimal)" opacity="0.5"/>
+  <g transform="translate(300, 300)"><g fill="none" stroke="#263238" stroke-width="4" stroke-linecap="round">
+        <path d="M-140,-40 C-100,-140 100,-140 140,-40 C170,40 90,120 0,150 C-90,120 -170,40 -140,-40 Z"/>
+        <circle cx="-45" cy="-20" r="12" fill="#263238"/>
+        <circle cx="45" cy="-20" r="12" fill="#263238"/>
+        <path d="M-40,40 Q0,70 40,40" />
+      </g></g>
+</svg>
