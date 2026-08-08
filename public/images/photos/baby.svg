@@ -1,0 +1,23 @@
+<svg width="900" height="1125" viewBox="0 0 900 1125" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder photograph">
+  <defs>
+    <linearGradient id="grad-baby" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F3E7D8"/>
+      <stop offset="100%" stop-color="#F6957E"/>
+    </linearGradient>
+    
+  <filter id="grain-baby">
+    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" result="noise"/>
+    <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.045 0"/>
+  </filter>
+  </defs>
+  <rect width="900" height="1125" fill="url(#grad-baby)"/>
+  <rect width="900" height="1125" filter="url(#grain-baby)" opacity="0.6"/>
+  <g transform="translate(450, 562.5)" opacity="0.92">
+    <g fill="none" stroke="#FFF8F0" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.85">
+    <circle cx="0" cy="-30" r="46"/>
+    <path d="M-56,60 C-56,10 -30,4 0,4 C30,4 56,10 56,60" />
+    <path d="M-30,-34 Q0,-64 30,-34" />
+  </g>
+  </g>
+  <rect x="0.5" y="0.5" width="899" height="1124" fill="none" stroke="#FFF8F0" stroke-opacity="0.14" stroke-width="1"/>
+</svg>
