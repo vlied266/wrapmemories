@@ -30,34 +30,36 @@ export function ProductReveal() {
 
         if (!isDesktop || reduceMotion) return;
 
+        // Initialize product stages with sophisticated entry state
         PRODUCT_STAGES.forEach((_, i) => {
           if (i > 0) {
-            gsap.set(imageRefs.current[i], { opacity: 0, scale: 0.92 });
-            gsap.set(verbRefs.current[i], { opacity: 0, y: 16 });
+            gsap.set(imageRefs.current[i], { opacity: 0, scale: 0.94, y: 20 });
+            gsap.set(verbRefs.current[i], { opacity: 0, clipPath: "polygon(0 0, 100% 0, 100% 0, 0 0)" });
+          } else {
+            gsap.set(imageRefs.current[i], { opacity: 1, scale: 1 });
+            gsap.set(verbRefs.current[i], {
+              opacity: 1,
+              clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)",
+            });
           }
         });
-        gsap.set(finalRef.current, { opacity: 0, y: 16 });
+        gsap.set(finalRef.current, { opacity: 0, clipPath: "polygon(0 0, 100% 0, 100% 0, 0 0)" });
         gsap.set(progressRef.current, { scaleX: 0 });
 
-        const stepUnits = 1.6;
-        const holdUnits = 0.8;
+        const stepUnits = 1.8;
+        const holdUnits = 1;
         const totalUnits = holdUnits + (PRODUCT_STAGES.length - 1) * stepUnits + stepUnits;
 
-        // Each stage "activates" (for the counter/progress label) at the
-        // midpoint of its incoming crossfade, not a uniform fraction of
-        // total scroll — the first hold and each 1-unit crossfade aren't
-        // evenly spaced, so a linear estimate drifts out of sync by the
-        // final stages.
         const activateAt = PRODUCT_STAGES.map((_, i) =>
-          i === 0 ? 0 : holdUnits + (i - 1) * stepUnits + 0.5,
+          i === 0 ? 0 : holdUnits + (i - 1) * stepUnits + 0.6,
         );
 
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: pinRef.current,
             start: "top top",
-            end: "+=420%",
-            scrub: 1,
+            end: "+=450%",
+            scrub: 1.2,
             pin: true,
             anticipatePin: 1,
             onUpdate: (self) => {
@@ -74,17 +76,67 @@ export function ProductReveal() {
         tl.to(progressRef.current, { scaleX: 1, duration: totalUnits, ease: "none" }, 0);
 
         let cursor = holdUnits;
-        PRODUCT_STAGES.forEach((_, i) => {
+        PRODUCT_STAGES.forEach((stage, i) => {
           if (i === 0) return;
-          tl.to(imageRefs.current[i - 1], { opacity: 0, scale: 1.05, duration: 1 }, cursor)
-            .to(imageRefs.current[i], { opacity: 1, scale: 1, duration: 1 }, "<")
-            .to(verbRefs.current[i - 1], { opacity: 0, y: -16, duration: 0.6 }, "<")
-            .to(verbRefs.current[i], { opacity: 1, y: 0, duration: 0.6 }, "<+0.2");
+
+          // Exit previous product and verb
+          tl.to(
+            imageRefs.current[i - 1],
+            { opacity: 0, scale: 1.06, y: 16, duration: 1.1, ease: "power2.inOut" },
+            cursor,
+          );
+          tl.to(
+            verbRefs.current[i - 1],
+            {
+              opacity: 0,
+              clipPath: "polygon(0 100%, 100% 100%, 100% 100%, 0 100%)",
+              duration: 0.7,
+              ease: "power2.in",
+            },
+            cursor,
+          );
+
+          // Enter new product and verb
+          tl.to(
+            imageRefs.current[i],
+            { opacity: 1, scale: 1, y: 0, duration: 1.1, ease: "power3.out" },
+            cursor,
+          );
+          tl.to(
+            verbRefs.current[i],
+            {
+              opacity: 1,
+              clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)",
+              duration: 0.8,
+              ease: "power3.out",
+            },
+            cursor + 0.3,
+          );
+
           cursor += stepUnits;
         });
 
-        tl.to(verbRefs.current[PRODUCT_STAGES.length - 1], { opacity: 0, y: -16, duration: 0.5 }, cursor)
-          .to(finalRef.current, { opacity: 1, y: 0, duration: 0.8 }, "<+0.1");
+        // Final "Keep it" reveal
+        tl.to(
+          verbRefs.current[PRODUCT_STAGES.length - 1],
+          {
+            opacity: 0,
+            clipPath: "polygon(0 100%, 100% 100%, 100% 100%, 0 100%)",
+            duration: 0.6,
+            ease: "power2.in",
+          },
+          cursor,
+        );
+        tl.to(
+          finalRef.current,
+          {
+            opacity: 1,
+            clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)",
+            duration: 0.9,
+            ease: "power3.out",
+          },
+          cursor + 0.2,
+        );
       });
 
       return () => mm.revert();
@@ -101,52 +153,88 @@ export function ProductReveal() {
         </h2>
       </Container>
 
-      {/* Desktop / motion-safe: pinned product sequence */}
+      {/* Desktop / motion-safe: pinned premium product sequence */}
       <div ref={pinRef} className="relative hidden h-[100svh] overflow-hidden md:motion-safe:block">
         <Container className="relative flex h-full flex-col items-center justify-center">
-          <div className="relative aspect-square w-[320px] sm:w-[400px]">
-            {PRODUCT_STAGES.map((stage, i) => (
+          {/* Premium product composition with editorial asymmetry */}
+          <div className="relative w-full max-w-5xl">
+            <div className="relative flex items-center justify-between gap-8 lg:gap-12">
+              {/* Product image area (35-50% visual weight) */}
               <div
-                key={stage.key}
-                ref={(el) => {
-                  imageRefs.current[i] = el;
+                className="relative aspect-[3/4] w-[45%] flex-shrink-0 sm:w-[42%]"
+                style={{
+                  perspective: 1200,
                 }}
-                className="absolute inset-0"
               >
-                <Image src={stage.image} alt={stage.name} fill sizes="400px" className="object-contain" />
+                <div className="relative h-full w-full">
+                  {PRODUCT_STAGES.map((stage, i) => (
+                    <div
+                      key={stage.key}
+                      ref={(el) => {
+                        imageRefs.current[i] = el;
+                      }}
+                      className="absolute inset-0"
+                      style={{
+                        transformStyle: "preserve-3d",
+                      }}
+                    >
+                      <Image
+                        src={stage.image}
+                        alt={stage.name}
+                        fill
+                        sizes="(min-width: 1024px) 380px, 200px"
+                        className="object-contain drop-shadow-[0_30px_60px_rgba(38,50,56,0.12)]"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
 
-          <div className="relative mt-6 h-20 w-full max-w-xl">
-            {PRODUCT_STAGES.map((stage, i) => (
-              <span
-                key={stage.key}
-                ref={(el) => {
-                  verbRefs.current[i] = el;
-                }}
-                className="absolute inset-x-0 text-center font-display text-5xl sm:text-6xl"
-                style={{ color: stage.color }}
-              >
-                {stage.verb}
-              </span>
-            ))}
-            <p
-              ref={finalRef}
-              className="absolute inset-x-0 text-center font-display text-5xl text-coral sm:text-6xl"
-            >
-              Keep it.
-            </p>
-          </div>
+              {/* Text/verb area (intentionally spaced) */}
+              <div className="flex-1">
+                <div className="relative h-24 w-full overflow-hidden">
+                  {PRODUCT_STAGES.map((stage, i) => (
+                    <span
+                      key={stage.key}
+                      ref={(el) => {
+                        verbRefs.current[i] = el;
+                      }}
+                      className="absolute left-0 top-0 font-display text-5xl leading-tight sm:text-6xl lg:text-7xl"
+                      style={{
+                        color: stage.color,
+                        clipPath: i === 0 ? "polygon(0 0, 100% 0, 100% 100%, 0 100%)" : "polygon(0 0, 100% 0, 100% 0, 0 0)",
+                      }}
+                    >
+                      {stage.verb}
+                    </span>
+                  ))}
+                  <p
+                    ref={finalRef}
+                    className="absolute left-0 top-0 font-display text-5xl leading-tight text-coral sm:text-6xl lg:text-7xl"
+                    style={{
+                      clipPath: "polygon(0 0, 100% 0, 100% 0, 0 0)",
+                    }}
+                  >
+                    Keep it.
+                  </p>
+                </div>
 
-          <div className="absolute bottom-14 flex flex-col items-center gap-3">
-            <div className="h-px w-64 overflow-hidden bg-charcoal/10">
-              <div ref={progressRef} className="h-full w-full origin-left bg-coral" />
+                {/* Product info + progress indicator */}
+                <div className="mt-8 flex items-center justify-between border-t border-charcoal/10 pt-6">
+                  <div>
+                    <p className="text-xs tracking-[0.18em] text-charcoal/50" aria-live="polite">
+                      {String(activeIndex + 1).padStart(2, "0")} / {String(PRODUCT_STAGES.length).padStart(2, "0")}
+                    </p>
+                    <p className="mt-1 font-display text-sm italic text-charcoal/70">
+                      {PRODUCT_STAGES[activeIndex].name}
+                    </p>
+                  </div>
+                  <div className="h-px w-32 overflow-hidden bg-charcoal/10">
+                    <div ref={progressRef} className="h-full w-full origin-left bg-coral" />
+                  </div>
+                </div>
+              </div>
             </div>
-            <p className="text-xs tracking-[0.18em] text-charcoal/40" aria-live="polite">
-              {String(activeIndex + 1).padStart(2, "0")} / {String(PRODUCT_STAGES.length).padStart(2, "0")} —{" "}
-              {PRODUCT_STAGES[activeIndex].name}
-            </p>
           </div>
         </Container>
       </div>

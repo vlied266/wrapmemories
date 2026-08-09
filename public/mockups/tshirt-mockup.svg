@@ -1,0 +1,48 @@
+<svg viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000000" flood-opacity="0.12" />
+    </filter>
+    <linearGradient id="fabricGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f0f0f0;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#e5e5e5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d9d9d9;stop-opacity:1" />
+    </linearGradient>
+    <pattern id="fabricTexture" patternUnits="userSpaceOnUse" width="4" height="4">
+      <circle cx="2" cy="2" r="0.5" fill="#000000" opacity="0.02" />
+    </pattern>
+  </defs>
+
+  <!-- Ground shadow -->
+  <ellipse cx="200" cy="460" rx="85" ry="15" fill="#000000" opacity="0.08" filter="url(#shadow)" />
+
+  <!-- Shirt body with subtle wrinkles -->
+  <g filter="url(#shadow)">
+    <!-- Main body -->
+    <path d="M 120 60 L 110 180 Q 110 280 140 380 L 260 380 Q 290 280 290 180 L 280 60 Z"
+          fill="url(#fabricGradient)" />
+
+    <!-- Fabric texture overlay -->
+    <path d="M 120 60 L 110 180 Q 110 280 140 380 L 260 380 Q 290 280 290 180 L 280 60 Z"
+          fill="url(#fabricTexture)" opacity="0.4" />
+
+    <!-- Left shoulder fold shadow -->
+    <path d="M 120 60 Q 135 80 135 120 Q 130 100 120 90 Z" fill="#000000" opacity="0.06" />
+
+    <!-- Printed design area (centered) -->
+    <rect x="160" y="140" width="80" height="120" rx="4" fill="#F8D5D0" opacity="0.9" />
+    <circle cx="180" cy="160" r="8" fill="#6FA7A2" opacity="0.7" />
+    <circle cx="210" cy="155" r="6" fill="#F26B5B" opacity="0.8" />
+    <path d="M 190 190 Q 205 200 220 190" stroke="#6FA7A2" stroke-width="1.5" fill="none" opacity="0.6" />
+    <line x1="170" y1="210" x2="230" y2="210" stroke="#F26B5B" stroke-width="1" opacity="0.5" />
+  </g>
+
+  <!-- Sleeves -->
+  <g filter="url(#shadow)">
+    <path d="M 120 60 L 90 120 Q 80 160 85 200 L 110 180 Z" fill="url(#fabricGradient)" opacity="0.95" />
+    <path d="M 280 60 L 310 120 Q 320 160 315 200 L 290 180 Z" fill="url(#fabricGradient)" opacity="0.95" />
+  </g>
+
+  <!-- Collar depth -->
+  <ellipse cx="200" cy="60" rx="60" ry="8" fill="#000000" opacity="0.04" />
+</svg>
