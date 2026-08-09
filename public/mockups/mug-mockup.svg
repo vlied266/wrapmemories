@@ -1,0 +1,42 @@
+<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.15" />
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.08" />
+    </filter>
+    <linearGradient id="mugGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#f5f5f5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e8e8e8;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="rim" cx="50%" cy="20%" r="50%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.6" />
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Shadow on ground -->
+  <ellipse cx="200" cy="340" rx="90" ry="12" fill="#000000" opacity="0.08" filter="url(#shadow)" />
+
+  <!-- Mug body with depth -->
+  <g transform="skewY(-2)">
+    <path d="M 140 80 Q 130 100 130 160 Q 130 240 160 280 Q 200 310 240 310 Q 280 310 240 280 Q 270 240 270 160 Q 270 100 260 80 Z"
+          fill="url(#mugGradient)" filter="url(#shadow)" />
+
+    <!-- Printed artwork area (warm coral/teal blend) -->
+    <ellipse cx="200" cy="170" rx="55" ry="70" fill="#E8A89A" opacity="0.85" />
+    <circle cx="210" cy="150" r="8" fill="#6FA7A2" opacity="0.6" />
+    <circle cx="190" cy="180" r="5" fill="#F26B5B" opacity="0.7" />
+    <path d="M 170 190 Q 185 200 200 195" stroke="#6FA7A2" stroke-width="2" fill="none" opacity="0.5" />
+  </g>
+
+  <!-- Handle -->
+  <path d="M 270 120 Q 310 120 310 180 Q 310 240 270 250"
+        stroke="url(#mugGradient)" stroke-width="28" fill="none" filter="url(#shadow)" />
+
+  <!-- Rim highlight -->
+  <ellipse cx="200" cy="80" rx="65" ry="15" fill="url(#rim)" />
+
+  <!-- Subtle top interior highlight -->
+  <ellipse cx="200" cy="85" rx="50" ry="8" fill="#ffffff" opacity="0.3" />
+</svg>

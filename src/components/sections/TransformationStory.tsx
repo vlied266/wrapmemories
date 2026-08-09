@@ -33,35 +33,85 @@ export function TransformationStory() {
 
         if (!isDesktop || reduceMotion) return;
 
-        gsap.set(stageRefs.current[1], { opacity: 0, scale: 0.94 });
-        gsap.set(stageRefs.current[2], { opacity: 0, scale: 0.94 });
-        gsap.set(captionRefs.current[1], { opacity: 0, y: 12 });
-        gsap.set(captionRefs.current[2], { opacity: 0, y: 12 });
-        gsap.set(finalRef.current, { opacity: 0, y: 12 });
+        // Initialize stages with sophisticated entry state
+        gsap.set(stageRefs.current[0], { clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)" });
+        gsap.set(stageRefs.current[1], { opacity: 0, clipPath: "polygon(0 0, 0% 0, 0% 100%, 0 100%)" });
+        gsap.set(stageRefs.current[2], { opacity: 0, scale: 0.96, y: 12 });
+        gsap.set(captionRefs.current[1], { opacity: 0, y: 16 });
+        gsap.set(captionRefs.current[2], { opacity: 0, y: 16 });
+        gsap.set(finalRef.current, { opacity: 0, y: 16 });
 
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: pinRef.current,
             start: "top top",
-            end: "+=280%",
+            end: "+=320%",
             scrub: 1,
             pin: true,
             anticipatePin: 1,
           },
         });
 
-        tl.to(stageRefs.current[0], { opacity: 0, scale: 1.06, duration: 1 }, 1)
-          .to(stageRefs.current[1], { opacity: 1, scale: 1, duration: 1 }, "<")
-          .to(captionRefs.current[0], { opacity: 0, y: -12, duration: 0.6 }, "<")
-          .to(captionRefs.current[1], { opacity: 1, y: 0, duration: 0.6 }, "<+0.2")
+        // Stage A → B: Diagonal clip-path reveal with parallax push
+        tl.to(
+          stageRefs.current[0],
+          { opacity: 0.7, y: -12, duration: 1.2, ease: "power2.inOut" },
+          0.5,
+        );
+        tl.to(
+          stageRefs.current[1],
+          {
+            opacity: 1,
+            clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)",
+            duration: 1.2,
+            ease: "power2.inOut",
+          },
+          0.5,
+        );
+        tl.to(
+          captionRefs.current[0],
+          { opacity: 0, y: -16, duration: 0.7, ease: "power2.in" },
+          0.5,
+        );
+        tl.to(
+          captionRefs.current[1],
+          { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
+          1.2,
+        );
 
-          .to(stageRefs.current[1], { opacity: 0, scale: 1.06, duration: 1 }, 2.4)
-          .to(stageRefs.current[2], { opacity: 1, scale: 1, duration: 1 }, "<")
-          .to(captionRefs.current[1], { opacity: 0, y: -12, duration: 0.6 }, "<")
-          .to(captionRefs.current[2], { opacity: 1, y: 0, duration: 0.6 }, "<+0.2")
+        // Stage B → C: Product transform with scale bloom
+        tl.to(
+          stageRefs.current[1],
+          { opacity: 0.6, y: -8, duration: 1.2, ease: "power2.inOut" },
+          2.8,
+        );
+        tl.to(
+          stageRefs.current[2],
+          { opacity: 1, scale: 1, y: 0, duration: 1.2, ease: "power3.out" },
+          2.8,
+        );
+        tl.to(
+          captionRefs.current[1],
+          { opacity: 0, y: -16, duration: 0.7, ease: "power2.in" },
+          2.8,
+        );
+        tl.to(
+          captionRefs.current[2],
+          { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
+          3.5,
+        );
 
-          .to(captionRefs.current[2], { opacity: 0, y: -12, duration: 0.5 }, 3.8)
-          .to(finalRef.current, { opacity: 1, y: 0, duration: 0.8 }, "<+0.1");
+        // Final reveal: "We make it real"
+        tl.to(
+          captionRefs.current[2],
+          { opacity: 0, y: -16, duration: 0.6, ease: "power2.in" },
+          4.6,
+        );
+        tl.to(
+          finalRef.current,
+          { opacity: 1, y: 0, duration: 1, ease: "power3.out" },
+          4.8,
+        );
       });
 
       return () => mm.revert();
