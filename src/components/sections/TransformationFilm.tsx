@@ -96,15 +96,15 @@ export function TransformationFilm() {
     if (frameNum < 30) {
       destX = 0;
       destY = 0;
-      renderScale = 0.95;
+      renderScale = 1.3;
     } else if (frameNum < 90) {
       destX = 0;
       destY = 0;
-      renderScale = 0.95 + ((frameNum - 30) / 60) * 0.05;
+      renderScale = 1.3 + ((frameNum - 30) / 60) * 0.1;
     } else {
       destX = 0;
       destY = 0;
-      renderScale = 1.0;
+      renderScale = 1.4;
     }
 
     return { destX, destY, renderScale };
@@ -263,9 +263,10 @@ export function TransformationFilm() {
           {/* Canvas element - transparent frames */}
           <canvas
             ref={canvasRef}
-            className="relative z-10 w-[95%] max-w-6xl h-auto"
+            className="relative z-10 w-[95%] max-w-6xl"
             style={{
               maxHeight: "80vh",
+              aspectRatio: "16 / 9",
             }}
           />
 
