@@ -13,18 +13,18 @@ const VIDEO_SRC = "/transformation-film.mp4";
 export function TransformationFilm() {
   const sectionRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
   const openingTextRef = useRef<HTMLParagraphElement | null>(null);
   const closingTextRef = useRef<HTMLParagraphElement | null>(null);
 
   const [videoDuration, setVideoDuration] = useState(0);
-  const [isReducedMotion, setIsReducedMotion] = useState(false);
+  const [isReducedMotion, setIsReducedMotion] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  });
 
-  // Handle reduced motion and media query
+  // Handle reduced motion media query changes
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setIsReducedMotion(mediaQuery.matches);
-
     const handleChange = (e: MediaQueryListEvent) => setIsReducedMotion(e.matches);
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
