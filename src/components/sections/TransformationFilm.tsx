@@ -12,6 +12,7 @@ const CLOSING_TEXT = "Made unforgettable.";
 
 // 125 transparent PNG frames
 const FRAME_COUNT = 125;
+const SMOOTHING_FACTOR = 0.1;
 
 const getFramePath = (frameNum: number) =>
   `/sequences/transformation/frame-${String(frameNum).padStart(3, "0")}.png`;
@@ -23,7 +24,8 @@ export function TransformationFilm() {
   const closingTextRef = useRef<HTMLParagraphElement | null>(null);
 
   const frameImagesRef = useRef<Map<number, HTMLImageElement>>(new Map());
-  const currentFrameIndexRef = useRef(0);
+  const targetFrameRef = useRef(1);
+  const displayedFrameRef = useRef(1);
   const isPreloadingRef = useRef(true);
 
   const [isReducedMotion, setIsReducedMotion] = useState(() => {
@@ -39,85 +41,42 @@ export function TransformationFilm() {
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
-  // Test: Render frame 63 after 3 seconds to verify canvas works
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (canvasRef.current) {
-        console.log(`[TransformationFilm] Canvas dimensions on mount: ${canvasRef.current.offsetWidth}x${canvasRef.current.offsetHeight}`);
-        const testImg = new Image();
-        testImg.onload = () => {
-          console.log(`[TransformationFilm] Test image loaded: ${testImg.naturalWidth}x${testImg.naturalHeight}`);
-          renderFrame(63);
-        };
-        testImg.onerror = () => {
-          console.error("[TransformationFilm] Failed to load test image frame-063.png");
-        };
-        testImg.src = getFramePath(63);
-        frameImagesRef.current.set(63, testImg);
-      }
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Preload all frame images with diagnostics
+  // Preload all frame images
   useEffect(() => {
     const preloadFrames = async () => {
-      console.log("[TransformationFilm] Starting frame preload...");
-      let successCount = 0;
-      const failedUrls: string[] = [];
-
       for (let i = 1; i <= FRAME_COUNT; i++) {
         const img = new Image();
-        const url = getFramePath(i);
-
-        img.onload = () => {
-          successCount++;
-          if (i === 1) {
-            console.log(`[TransformationFilm] Frame 1 loaded - naturalWidth: ${img.naturalWidth}, naturalHeight: ${img.naturalHeight}`);
-          }
-        };
-
-        img.onerror = () => {
-          failedUrls.push(url);
-          console.warn(`[TransformationFilm] Failed to load: ${url}`);
-        };
-
-        img.src = url;
+        img.src = getFramePath(i);
         frameImagesRef.current.set(i, img);
       }
-
-      setTimeout(() => {
-        console.log(`[TransformationFilm] Frame preload summary - Requested: ${FRAME_COUNT}, Loaded: ${successCount}, Failed: ${failedUrls.length}`);
-        if (failedUrls.length > 0) {
-          console.error("[TransformationFilm] Failed URLs:", failedUrls.slice(0, 5));
-        }
-      }, 2000);
-
       isPreloadingRef.current = false;
     };
 
     preloadFrames();
   }, []);
 
-  // Non-linear frame mapping for cinematic pacing
+  // Non-linear frame mapping for cinematic pacing with explicit story zones
   const mapScrollProgressToFrameIndex = (progress: number): number => {
     // progress is 0-1 representing scroll position
-    // Map to frame number (1-125) with non-linear zones for cinematic timing:
-    // 0.00-0.30: frames 1-35   (dog running, establish - 35 frames)
-    // 0.30-0.60: frames 36-80  (anticipation, flash, early transformation - 45 frames)
-    // 0.60-0.85: frames 81-115 (transformation, mug forms - 35 frames)
-    // 0.85-1.00: frames 116-125 (final mug hold - 10 frames)
+    // Story zones with breathing room:
+    // 0.00-0.25: frames 1-30   (dog running, establish)
+    // 0.25-0.40: frames 31-50  (approach, anticipation)
+    // 0.40-0.65: frames 51-90  (flash, early transformation - extended for impact)
+    // 0.65-0.85: frames 91-120 (mug formation, reveal)
+    // 0.85-1.00: frame 125     (final mug hold - lock and hold)
 
     let frameNum: number;
 
-    if (progress < 0.3) {
-      frameNum = 1 + (progress / 0.3) * 34;
-    } else if (progress < 0.6) {
-      frameNum = 35 + ((progress - 0.3) / 0.3) * 45;
+    if (progress < 0.25) {
+      frameNum = 1 + (progress / 0.25) * 29;
+    } else if (progress < 0.4) {
+      frameNum = 30 + ((progress - 0.25) / 0.15) * 20;
+    } else if (progress < 0.65) {
+      frameNum = 50 + ((progress - 0.4) / 0.25) * 40;
     } else if (progress < 0.85) {
-      frameNum = 80 + ((progress - 0.6) / 0.25) * 35;
+      frameNum = 90 + ((progress - 0.65) / 0.2) * 30;
     } else {
-      frameNum = 115 + ((progress - 0.85) / 0.15) * 10;
+      frameNum = 125;
     }
 
     return Math.round(Math.max(1, Math.min(frameNum, FRAME_COUNT)));
@@ -125,43 +84,25 @@ export function TransformationFilm() {
 
   // Canvas rendering for transparent frame display
   const renderFrame = (frameNum: number) => {
-    if (!canvasRef.current) {
-      console.warn("[TransformationFilm] Canvas ref not available");
-      return;
-    }
+    if (!canvasRef.current) return;
 
     const img = frameImagesRef.current.get(frameNum);
 
-    if (!img) {
-      console.warn(`[TransformationFilm] Image not in map for frame ${frameNum}`);
+    if (!img || !img.complete) {
       return;
     }
-
-    if (!img.complete) {
-      console.warn(`[TransformationFilm] Image not loaded yet for frame ${frameNum}`);
-      return;
-    }
-
-    console.log(`[TransformationFilm] Rendering frame ${frameNum} - Image size: ${img.naturalWidth}x${img.naturalHeight}`);
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d", { alpha: true });
-    if (!ctx) {
-      console.error("[TransformationFilm] Failed to get 2D context");
-      return;
-    }
+    if (!ctx) return;
 
-    // High DPI rendering
     const dpr = window.devicePixelRatio || 1;
     canvas.width = canvas.offsetWidth * dpr;
     canvas.height = canvas.offsetHeight * dpr;
-    console.log(`[TransformationFilm] Canvas set to ${canvas.width}x${canvas.height} (offset: ${canvas.offsetWidth}x${canvas.offsetHeight}, dpr: ${dpr})`);
     ctx.scale(dpr, dpr);
 
-    // Clear canvas completely (transparent)
     ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
 
-    // Draw image with contain scaling (preserve aspect ratio)
     const canvasWidth = canvas.offsetWidth;
     const canvasHeight = canvas.offsetHeight;
     const imgAspect = img.naturalWidth / img.naturalHeight;
@@ -177,26 +118,39 @@ export function TransformationFilm() {
     const x = (canvasWidth - drawWidth) / 2;
     const y = (canvasHeight - drawHeight) / 2;
 
-    console.log(`[TransformationFilm] Drawing at ${x}, ${y}, size: ${drawWidth}x${drawHeight}`);
     ctx.drawImage(img, x, y, drawWidth, drawHeight);
   };
+
+  // Smooth frame interpolation using RAF
+  useEffect(() => {
+    if (isReducedMotion) return;
+
+    let animationId: number;
+    const animate = () => {
+      const diff = targetFrameRef.current - displayedFrameRef.current;
+      if (Math.abs(diff) > 0.1) {
+        displayedFrameRef.current += diff * SMOOTHING_FACTOR;
+        const frameNum = Math.round(displayedFrameRef.current);
+        renderFrame(frameNum);
+      }
+      animationId = requestAnimationFrame(animate);
+    };
+
+    animationId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationId);
+  }, [isReducedMotion]);
 
   // Desktop scroll scrubbing with frame sequence
   useGSAP(
     () => {
       if (!canvasRef.current || !sectionRef.current || isReducedMotion) {
-        console.log("[TransformationFilm] GSAP effect skipped");
         return;
       }
 
-      // Only scrub on desktop
       const isDesktop = window.innerWidth >= 768;
       if (!isDesktop) {
-        console.log("[TransformationFilm] Mobile detected, skipping desktop scrub");
         return;
       }
-
-      console.log("[TransformationFilm] Setting up canvas frame sequence scrub");
 
       const mm = gsap.matchMedia();
 
@@ -215,18 +169,13 @@ export function TransformationFilm() {
           scrollTrigger: {
             trigger: sectionRef.current,
             start: "top top",
-            end: "+=400vh",
+            end: "+=600vh",
             scrub: 1.2,
             pin: true,
             anticipatePin: 1,
             onUpdate: (self) => {
               const progress = self.progress;
-              const frameNum = mapScrollProgressToFrameIndex(progress);
-
-              if (frameNum !== currentFrameIndexRef.current) {
-                currentFrameIndexRef.current = frameNum;
-                renderFrame(frameNum);
-              }
+              targetFrameRef.current = mapScrollProgressToFrameIndex(progress);
             },
           },
         });
@@ -291,24 +240,9 @@ export function TransformationFilm() {
           {/* Canvas element - transparent frames */}
           <canvas
             ref={canvasRef}
-            className="relative z-10 w-[95%] max-w-6xl h-auto border border-red-500"
+            className="relative z-10 w-[95%] max-w-6xl h-auto"
             style={{
               maxHeight: "80vh",
-            }}
-          />
-
-          {/* DEBUG: Temporary IMG test to verify PNG URLs work */}
-          <img
-            src={getFramePath(63)}
-            alt="Debug frame 63"
-            style={{
-              position: "absolute",
-              bottom: "20px",
-              left: "20px",
-              width: "200px",
-              height: "auto",
-              border: "2px solid blue",
-              zIndex: 5,
             }}
           />
 
