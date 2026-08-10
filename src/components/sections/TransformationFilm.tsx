@@ -94,17 +94,17 @@ export function TransformationFilm() {
     let renderScale: number;
 
     if (frameNum < 30) {
-      destX = -150 + (frameNum / 30) * 100;
-      destY = 40;
-      renderScale = 3.0;
+      destX = 0;
+      destY = 0;
+      renderScale = 0.95;
     } else if (frameNum < 90) {
-      destX = -50 + ((frameNum - 30) / 60) * 50;
-      destY = 40 + ((frameNum - 30) / 60) * (-20);
-      renderScale = 3.0 + ((frameNum - 30) / 60) * 0.2;
+      destX = 0;
+      destY = 0;
+      renderScale = 0.95 + ((frameNum - 30) / 60) * 0.05;
     } else {
       destX = 0;
-      destY = 20;
-      renderScale = 3.2;
+      destY = 0;
+      renderScale = 1.0;
     }
 
     return { destX, destY, renderScale };
