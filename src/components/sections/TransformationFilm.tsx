@@ -10,12 +10,11 @@ import { Eyebrow } from "@/components/ui/Eyebrow";
 const OPENING_TEXT = "Your moment.";
 const CLOSING_TEXT = "Made unforgettable.";
 
-// Available frame numbers (77 total frames with sampling pattern)
-const AVAILABLE_FRAMES = [
-  1, 2, 3, 7, 8, 9, 13, 14, 15, 19, 20, 21, 25, 26, 27, 31, 32, 33, 37, 38, 39, 43, 44, 45, 49, 50, 51, 55, 56, 57, 61, 62, 63, 67, 68, 69, 73, 74, 75, 79, 80, 81, 85, 86, 87, 91, 92, 93, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125,
-];
+// 125 transparent PNG frames
+const FRAME_COUNT = 125;
 
-const getFramePath = (frameNum: number) => `/frame-${String(frameNum).padStart(3, "0")}.jpg`;
+const getFramePath = (frameNum: number) =>
+  `/sequences/transformation/frame-${String(frameNum).padStart(3, "0")}.png`;
 
 export function TransformationFilm() {
   const sectionRef = useRef<HTMLDivElement | null>(null);
@@ -44,12 +43,16 @@ export function TransformationFilm() {
   useEffect(() => {
     const preloadFrames = async () => {
       console.log("[TransformationFilm] Starting frame preload...");
-      for (const frameNum of AVAILABLE_FRAMES) {
+      for (let i = 1; i <= FRAME_COUNT; i++) {
         const img = new Image();
-        img.src = getFramePath(frameNum);
-        frameImagesRef.current.set(frameNum, img);
+        img.src = getFramePath(i);
+        frameImagesRef.current.set(i, img);
       }
-      console.log("[TransformationFilm] Frame preload started for", AVAILABLE_FRAMES.length, "frames");
+      console.log(
+        "[TransformationFilm] Frame preload started for",
+        FRAME_COUNT,
+        "frames"
+      );
       isPreloadingRef.current = false;
     };
 
@@ -59,44 +62,40 @@ export function TransformationFilm() {
   // Non-linear frame mapping for cinematic pacing
   const mapScrollProgressToFrameIndex = (progress: number): number => {
     // progress is 0-1 representing scroll position
-    // Map to frame index (0-76) with non-linear zones:
-    // 0.00-0.25: frames 0-20   (dog running - 21 frames over 100vh)
-    // 0.25-0.45: frames 20-35  (approach to flash - 15 frames over 80vh)
-    // 0.45-0.70: frames 35-55  (flash/transformation - 20 frames over 100vh)
-    // 0.70-0.85: frames 55-68  (artwork/product - 13 frames over 60vh)
-    // 0.85-1.00: frames 68-76  (final mug hold - 8 frames over 60vh)
+    // Map to frame number (1-125) with non-linear zones for cinematic timing:
+    // 0.00-0.30: frames 1-35   (dog running, establish - 35 frames)
+    // 0.30-0.60: frames 36-80  (anticipation, flash, early transformation - 45 frames)
+    // 0.60-0.85: frames 81-115 (transformation, mug forms - 35 frames)
+    // 0.85-1.00: frames 116-125 (final mug hold - 10 frames)
 
-    let frameIndex: number;
+    let frameNum: number;
 
-    if (progress < 0.25) {
-      frameIndex = (progress / 0.25) * 20;
-    } else if (progress < 0.45) {
-      frameIndex = 20 + ((progress - 0.25) / 0.2) * 15;
-    } else if (progress < 0.7) {
-      frameIndex = 35 + ((progress - 0.45) / 0.25) * 20;
+    if (progress < 0.3) {
+      frameNum = 1 + (progress / 0.3) * 34;
+    } else if (progress < 0.6) {
+      frameNum = 35 + ((progress - 0.3) / 0.3) * 45;
     } else if (progress < 0.85) {
-      frameIndex = 55 + ((progress - 0.7) / 0.15) * 13;
+      frameNum = 80 + ((progress - 0.6) / 0.25) * 35;
     } else {
-      frameIndex = 68 + ((progress - 0.85) / 0.15) * 8;
+      frameNum = 115 + ((progress - 0.85) / 0.15) * 10;
     }
 
-    return Math.round(Math.max(0, Math.min(frameIndex, AVAILABLE_FRAMES.length - 1)));
+    return Math.round(Math.max(1, Math.min(frameNum, FRAME_COUNT)));
   };
 
-  // Canvas rendering for frame display
-  const renderFrame = (frameIndex: number) => {
+  // Canvas rendering for transparent frame display
+  const renderFrame = (frameNum: number) => {
     if (!canvasRef.current) return;
 
-    const frameNum = AVAILABLE_FRAMES[frameIndex];
     const img = frameImagesRef.current.get(frameNum);
 
     if (!img || !img.complete) {
-      // Frame not loaded, try next available frame
+      // Frame not loaded yet
       return;
     }
 
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
 
     // High DPI rendering
@@ -105,9 +104,8 @@ export function TransformationFilm() {
     canvas.height = canvas.offsetHeight * dpr;
     ctx.scale(dpr, dpr);
 
-    // Clear canvas
-    ctx.fillStyle = "#F5EFE7"; // cream color
-    ctx.fillRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+    // Clear canvas completely (transparent)
+    ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
 
     // Draw image with contain scaling (preserve aspect ratio)
     const canvasWidth = canvas.offsetWidth;
@@ -168,11 +166,11 @@ export function TransformationFilm() {
             anticipatePin: 1,
             onUpdate: (self) => {
               const progress = self.progress;
-              const frameIndex = mapScrollProgressToFrameIndex(progress);
+              const frameNum = mapScrollProgressToFrameIndex(progress);
 
-              if (frameIndex !== currentFrameIndexRef.current) {
-                currentFrameIndexRef.current = frameIndex;
-                renderFrame(frameIndex);
+              if (frameNum !== currentFrameIndexRef.current) {
+                currentFrameIndexRef.current = frameNum;
+                renderFrame(frameNum);
               }
             },
           },
@@ -206,7 +204,7 @@ export function TransformationFilm() {
       });
 
       // Render initial frame
-      renderFrame(0);
+      renderFrame(1);
     },
     { scope: sectionRef, dependencies: [isReducedMotion] }
   );
@@ -235,14 +233,12 @@ export function TransformationFilm() {
             {OPENING_TEXT}
           </p>
 
-          {/* Canvas element - large cinematic scale */}
+          {/* Canvas element - transparent frames */}
           <canvas
             ref={canvasRef}
             className="relative z-10 w-[95%] max-w-6xl h-auto"
             style={{
               maxHeight: "80vh",
-              aspectRatio: "16/9",
-              backgroundColor: "#F5EFE7",
             }}
           />
 
