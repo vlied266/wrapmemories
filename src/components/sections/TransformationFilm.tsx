@@ -58,16 +58,34 @@ export function TransformationFilm() {
   // Handle video metadata and desktop scroll scrubbing
   useGSAP(
     () => {
-      if (!videoRef.current || !sectionRef.current || isReducedMotion) return;
+      if (!videoRef.current || !sectionRef.current || isReducedMotion) {
+        console.log("[TransformationFilm] GSAP effect skipped:", {
+          videoRef: !!videoRef.current,
+          sectionRef: !!sectionRef.current,
+          isReducedMotion,
+        });
+        return;
+      }
 
       // Only scrub on desktop
       const isDesktop = window.innerWidth >= 768;
-      if (!isDesktop) return;
+      console.log("[TransformationFilm] Viewport width:", window.innerWidth, "isDesktop:", isDesktop);
+      if (!isDesktop) {
+        console.log("[TransformationFilm] Not desktop, skipping scrub setup");
+        return;
+      }
 
       const video = videoRef.current;
 
       // Wait for metadata to be loaded
       const handleMetadataLoaded = () => {
+        console.log("[TransformationFilm] Metadata loaded:", {
+          duration: video.duration,
+          readyState: video.readyState,
+          paused: video.paused,
+          error: video.error,
+        });
+
         if (!videoDuration) {
           setVideoDuration(video.duration);
         }
@@ -81,11 +99,14 @@ export function TransformationFilm() {
             reduceMotion: boolean;
           };
 
-          if (!isDesktopCondition) return;
+          console.log("[TransformationFilm] MatchMedia conditions:", { isDesktopCondition });
 
-          // Variables for smooth scrubbing
-          let targetTime = 0;
-          let currentTime = 0;
+          if (!isDesktopCondition) {
+            console.log("[TransformationFilm] MatchMedia says not desktop, returning");
+            return;
+          }
+
+          console.log("[TransformationFilm] Setting up scroll scrub timeline");
 
           const tl = gsap.timeline({
             scrollTrigger: {
@@ -96,7 +117,10 @@ export function TransformationFilm() {
               pin: true,
               anticipatePin: 1,
               onUpdate: (self) => {
-                targetTime = self.progress * video.duration;
+                const progress = self.progress;
+                const newTime = progress * video.duration;
+                video.currentTime = newTime;
+                console.log("[ScrollTrigger] Progress:", progress.toFixed(3), "Time:", newTime.toFixed(2), "Duration:", video.duration);
               },
             },
           });
@@ -123,30 +147,19 @@ export function TransformationFilm() {
             );
           }
 
-          // Smooth video time interpolation using ticker
-          const updateVideoTime = () => {
-            const diff = targetTime - currentTime;
-            if (Math.abs(diff) > 0.01) {
-              currentTime += diff * 0.15; // smooth interpolation factor
-              video.currentTime = currentTime;
-            } else if (Math.abs(diff) > 0) {
-              currentTime = targetTime;
-              video.currentTime = currentTime;
-            }
-          };
-
-          gsap.ticker.add(updateVideoTime);
-
           return () => {
-            gsap.ticker.remove(updateVideoTime);
             mm.revert();
           };
         });
       };
 
+      console.log("[TransformationFilm] Video readyState:", video.readyState);
+
       if (video.readyState >= 1) {
+        console.log("[TransformationFilm] Video metadata already loaded, calling handler");
         handleMetadataLoaded();
       } else {
+        console.log("[TransformationFilm] Waiting for loadedmetadata event");
         video.addEventListener("loadedmetadata", handleMetadataLoaded, { once: true });
       }
 
