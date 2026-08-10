@@ -82,34 +82,35 @@ export function TransformationFilm() {
     return Math.round(Math.max(1, Math.min(frameNum, FRAME_COUNT)));
   };
 
-  // Calculate horizontal offset for subject positioning during sequence
-  const getFrameOffset = (frameNum: number): { x: number; y: number; scale: number } => {
-    // During running (frames 1-30): dog on left side
-    // During transformation (frames 30-90): transition to center
-    // During final (frames 90-125): centered hero reveal
+  // Calculate positioning and scale based on frame progression
+  const getFrameTransform = (frameNum: number): { destX: number; destY: number; renderScale: number } => {
+    // Uniform scale factor based on frame progression
+    // During running: dog on left, lower-middle area
+    // During transformation: transition toward center
+    // During final: centered hero reveal
 
-    let offsetX: number;
-    let offsetY: number;
-    let scale: number;
+    let destX: number;
+    let destY: number;
+    let renderScale: number;
 
     if (frameNum < 30) {
-      offsetX = -200 + (frameNum / 30) * 120;
-      offsetY = 0;
-      scale = 3.5;
+      destX = -150 + (frameNum / 30) * 100;
+      destY = 40;
+      renderScale = 3.0;
     } else if (frameNum < 90) {
-      offsetX = -80 + ((frameNum - 30) / 60) * 80;
-      offsetY = 0;
-      scale = 3.5 + ((frameNum - 30) / 60) * 0.5;
+      destX = -50 + ((frameNum - 30) / 60) * 50;
+      destY = 40 + ((frameNum - 30) / 60) * (-20);
+      renderScale = 3.0 + ((frameNum - 30) / 60) * 0.2;
     } else {
-      offsetX = 0;
-      offsetY = 0;
-      scale = 4.0;
+      destX = 0;
+      destY = 20;
+      renderScale = 3.2;
     }
 
-    return { x: offsetX, y: offsetY, scale };
+    return { destX, destY, renderScale };
   };
 
-  // Canvas rendering with full-frame source, cinematic scale, and dynamic positioning
+  // Canvas rendering: full-frame source with uniform scale and dynamic positioning
   const renderFrame = (frameNum: number) => {
     if (!canvasRef.current) return;
 
@@ -129,14 +130,17 @@ export function TransformationFilm() {
 
     const canvasWidth = canvas.offsetWidth;
     const canvasHeight = canvas.offsetHeight;
-    const { x: offsetX, y: offsetY, scale } = getFrameOffset(frameNum);
+    const { destX, destY, renderScale } = getFrameTransform(frameNum);
 
-    const renderWidth = img.naturalWidth * scale / dpr;
-    const renderHeight = img.naturalHeight * scale / dpr;
+    // Uniform scale: preserve aspect ratio
+    const renderWidth = img.naturalWidth * renderScale;
+    const renderHeight = img.naturalHeight * renderScale;
 
-    const x = canvasWidth / 2 - renderWidth / 2 + offsetX;
-    const y = canvasHeight / 2 - renderHeight / 2 + offsetY;
+    // Position in canvas with dynamic offset
+    const x = canvasWidth / 2 - renderWidth / 2 + destX;
+    const y = canvasHeight / 2 - renderHeight / 2 + destY;
 
+    // Full source, no cropping
     ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, x, y, renderWidth, renderHeight);
   };
 
