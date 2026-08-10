@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
+import NextImage from "next/image";
 import { gsap, useGSAP } from "@/lib/gsap";
 import { MOTION_CONDITIONS } from "@/lib/motion";
 import { Container } from "@/components/ui/Container";
@@ -8,15 +9,24 @@ import { Eyebrow } from "@/components/ui/Eyebrow";
 
 const OPENING_TEXT = "Your moment.";
 const CLOSING_TEXT = "Made unforgettable.";
-const VIDEO_SRC = "/transformation-film.mp4";
+
+// Available frame numbers (77 total frames with sampling pattern)
+const AVAILABLE_FRAMES = [
+  1, 2, 3, 7, 8, 9, 13, 14, 15, 19, 20, 21, 25, 26, 27, 31, 32, 33, 37, 38, 39, 43, 44, 45, 49, 50, 51, 55, 56, 57, 61, 62, 63, 67, 68, 69, 73, 74, 75, 79, 80, 81, 85, 86, 87, 91, 92, 93, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125,
+];
+
+const getFramePath = (frameNum: number) => `/frame-${String(frameNum).padStart(3, "0")}.jpg`;
 
 export function TransformationFilm() {
   const sectionRef = useRef<HTMLDivElement | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const openingTextRef = useRef<HTMLParagraphElement | null>(null);
   const closingTextRef = useRef<HTMLParagraphElement | null>(null);
 
-  const [videoDuration, setVideoDuration] = useState(0);
+  const frameImagesRef = useRef<Map<number, HTMLImageElement>>(new Map());
+  const currentFrameIndexRef = useRef(0);
+  const isPreloadingRef = useRef(true);
+
   const [isReducedMotion, setIsReducedMotion] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -30,144 +40,148 @@ export function TransformationFilm() {
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
-  // Handle mobile autoplay when section is visible
+  // Preload all frame images
   useEffect(() => {
-    if (!videoRef.current || isReducedMotion) return;
+    const preloadFrames = async () => {
+      console.log("[TransformationFilm] Starting frame preload...");
+      for (const frameNum of AVAILABLE_FRAMES) {
+        const img = new Image();
+        img.src = getFramePath(frameNum);
+        frameImagesRef.current.set(frameNum, img);
+      }
+      console.log("[TransformationFilm] Frame preload started for", AVAILABLE_FRAMES.length, "frames");
+      isPreloadingRef.current = false;
+    };
 
-    // Only autoplay on mobile (below md breakpoint: 768px)
-    const isMobile = window.innerWidth < 768;
-    if (!isMobile) return;
+    preloadFrames();
+  }, []);
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && videoRef.current) {
-          videoRef.current.play().catch(() => {
-            // Autoplay blocked; video will show poster
-          });
-        } else if (videoRef.current && !videoRef.current.paused) {
-          videoRef.current.pause();
-        }
-      },
-      { threshold: 0.5 }
-    );
+  // Canvas rendering for frame display
+  const renderFrame = (frameIndex: number) => {
+    if (!canvasRef.current) return;
 
-    observer.observe(videoRef.current);
-    return () => observer.disconnect();
-  }, [isReducedMotion]);
+    const frameNum = AVAILABLE_FRAMES[frameIndex];
+    const img = frameImagesRef.current.get(frameNum);
 
-  // Handle video metadata and desktop scroll scrubbing
+    if (!img || !img.complete) {
+      // Frame not loaded, try next available frame
+      return;
+    }
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // High DPI rendering
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = canvas.offsetWidth * dpr;
+    canvas.height = canvas.offsetHeight * dpr;
+    ctx.scale(dpr, dpr);
+
+    // Clear canvas
+    ctx.fillStyle = "#F5EFE7"; // cream color
+    ctx.fillRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+
+    // Draw image with contain scaling (preserve aspect ratio)
+    const canvasWidth = canvas.offsetWidth;
+    const canvasHeight = canvas.offsetHeight;
+    const imgAspect = img.naturalWidth / img.naturalHeight;
+
+    let drawWidth = canvasWidth;
+    let drawHeight = canvasWidth / imgAspect;
+
+    if (drawHeight > canvasHeight) {
+      drawHeight = canvasHeight;
+      drawWidth = canvasHeight * imgAspect;
+    }
+
+    const x = (canvasWidth - drawWidth) / 2;
+    const y = (canvasHeight - drawHeight) / 2;
+
+    ctx.drawImage(img, x, y, drawWidth, drawHeight);
+  };
+
+  // Desktop scroll scrubbing with frame sequence
   useGSAP(
     () => {
-      if (!videoRef.current || !sectionRef.current || isReducedMotion) {
-        console.log("[TransformationFilm] GSAP effect skipped:", {
-          videoRef: !!videoRef.current,
-          sectionRef: !!sectionRef.current,
-          isReducedMotion,
-        });
+      if (!canvasRef.current || !sectionRef.current || isReducedMotion) {
+        console.log("[TransformationFilm] GSAP effect skipped");
         return;
       }
 
       // Only scrub on desktop
       const isDesktop = window.innerWidth >= 768;
-      console.log("[TransformationFilm] Viewport width:", window.innerWidth, "isDesktop:", isDesktop);
       if (!isDesktop) {
-        console.log("[TransformationFilm] Not desktop, skipping scrub setup");
+        console.log("[TransformationFilm] Mobile detected, skipping desktop scrub");
         return;
       }
 
-      const video = videoRef.current;
+      console.log("[TransformationFilm] Setting up canvas frame sequence scrub");
 
-      // Wait for metadata to be loaded
-      const handleMetadataLoaded = () => {
-        console.log("[TransformationFilm] Metadata loaded:", {
-          duration: video.duration,
-          readyState: video.readyState,
-          paused: video.paused,
-          error: video.error,
-        });
+      const mm = gsap.matchMedia();
 
-        if (!videoDuration) {
-          setVideoDuration(video.duration);
+      mm.add(MOTION_CONDITIONS, (context) => {
+        const { isDesktop: isDesktopCondition } = context.conditions as {
+          isDesktop: boolean;
+          isMobile: boolean;
+          reduceMotion: boolean;
+        };
+
+        if (!isDesktopCondition) {
+          return;
         }
 
-        const mm = gsap.matchMedia();
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top top",
+            end: "+=180vh",
+            scrub: 1.2,
+            pin: true,
+            anticipatePin: 1,
+            onUpdate: (self) => {
+              const progress = self.progress;
+              const frameIndex = Math.round(progress * (AVAILABLE_FRAMES.length - 1));
 
-        mm.add(MOTION_CONDITIONS, (context) => {
-          const { isDesktop: isDesktopCondition } = context.conditions as {
-            isDesktop: boolean;
-            isMobile: boolean;
-            reduceMotion: boolean;
-          };
-
-          console.log("[TransformationFilm] MatchMedia conditions:", { isDesktopCondition });
-
-          if (!isDesktopCondition) {
-            console.log("[TransformationFilm] MatchMedia says not desktop, returning");
-            return;
-          }
-
-          console.log("[TransformationFilm] Setting up scroll scrub timeline");
-
-          const tl = gsap.timeline({
-            scrollTrigger: {
-              trigger: sectionRef.current,
-              start: "top top",
-              end: "+=180vh",
-              scrub: 1.2,
-              pin: true,
-              anticipatePin: 1,
-              onUpdate: (self) => {
-                const progress = self.progress;
-                const newTime = progress * video.duration;
-                video.currentTime = newTime;
-                console.log("[ScrollTrigger] Progress:", progress.toFixed(3), "Time:", newTime.toFixed(2), "Duration:", video.duration);
-              },
+              if (frameIndex !== currentFrameIndexRef.current) {
+                currentFrameIndexRef.current = frameIndex;
+                renderFrame(frameIndex);
+              }
             },
-          });
-
-          // Add text animations
-          if (openingTextRef.current) {
-            tl.to(
-              openingTextRef.current,
-              { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
-              0.2
-            );
-            tl.to(
-              openingTextRef.current,
-              { opacity: 0, y: -20, duration: 0.6, ease: "power2.in" },
-              "+=1.5"
-            );
-          }
-
-          if (closingTextRef.current) {
-            tl.to(
-              closingTextRef.current,
-              { opacity: 1, y: 0, duration: 1, ease: "power3.out" },
-              "-=0.3"
-            );
-          }
-
-          return () => {
-            mm.revert();
-          };
+          },
         });
-      };
 
-      console.log("[TransformationFilm] Video readyState:", video.readyState);
+        // Add text animations
+        if (openingTextRef.current) {
+          tl.to(
+            openingTextRef.current,
+            { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
+            0.2
+          );
+          tl.to(
+            openingTextRef.current,
+            { opacity: 0, y: -20, duration: 0.6, ease: "power2.in" },
+            "+=1.5"
+          );
+        }
 
-      if (video.readyState >= 1) {
-        console.log("[TransformationFilm] Video metadata already loaded, calling handler");
-        handleMetadataLoaded();
-      } else {
-        console.log("[TransformationFilm] Waiting for loadedmetadata event");
-        video.addEventListener("loadedmetadata", handleMetadataLoaded, { once: true });
-      }
+        if (closingTextRef.current) {
+          tl.to(
+            closingTextRef.current,
+            { opacity: 1, y: 0, duration: 1, ease: "power3.out" },
+            "-=0.3"
+          );
+        }
 
-      return () => {
-        video.removeEventListener("loadedmetadata", handleMetadataLoaded);
-      };
+        return () => {
+          mm.revert();
+        };
+      });
+
+      // Render initial frame
+      renderFrame(0);
     },
-    { scope: sectionRef, dependencies: [isReducedMotion, videoDuration] }
+    { scope: sectionRef, dependencies: [isReducedMotion] }
   );
 
   return (
@@ -179,7 +193,7 @@ export function TransformationFilm() {
         </h2>
       </Container>
 
-      {/* Desktop and reduced-motion: pinned video scrubbing or static frame */}
+      {/* Desktop: pinned canvas scrubbing */}
       <div
         ref={sectionRef}
         className="relative hidden h-[100svh] overflow-hidden md:block bg-cream"
@@ -194,16 +208,14 @@ export function TransformationFilm() {
             {OPENING_TEXT}
           </p>
 
-          {/* Video element - large cinematic scale */}
-          <video
-            ref={videoRef}
-            src={VIDEO_SRC}
-            muted
-            playsInline
-            preload="auto"
-            className="relative z-10 w-[95%] max-w-6xl h-auto object-contain"
+          {/* Canvas element - large cinematic scale */}
+          <canvas
+            ref={canvasRef}
+            className="relative z-10 w-[95%] max-w-6xl h-auto"
             style={{
               maxHeight: "80vh",
+              aspectRatio: "16/9",
+              backgroundColor: "#F5EFE7",
             }}
           />
 
@@ -217,7 +229,7 @@ export function TransformationFilm() {
         </div>
       </div>
 
-      {/* Mobile: autoplay without scroll scrubbing */}
+      {/* Mobile: static final frame */}
       <div className="block md:hidden">
         <Container className="flex flex-col gap-8">
           {/* Opening text */}
@@ -225,13 +237,12 @@ export function TransformationFilm() {
             {OPENING_TEXT}
           </p>
 
-          {/* Video */}
-          <video
-            ref={videoRef}
-            src={VIDEO_SRC}
-            muted
-            playsInline
-            preload="metadata"
+          {/* Static final frame image */}
+          <NextImage
+            src={getFramePath(125)}
+            alt="Transformation final frame"
+            width={1920}
+            height={1080}
             className="w-full h-auto rounded-2xl shadow-[0_20px_40px_rgba(38,50,56,0.2)]"
           />
 
