@@ -24,7 +24,6 @@ export function TransformationFilm() {
   const closingTextRef = useRef<HTMLParagraphElement | null>(null);
 
   const frameImagesRef = useRef<Map<number, HTMLImageElement>>(new Map());
-  const alphaBoundsRef = useRef<Map<number, { x: number; y: number; width: number; height: number }>>(new Map());
   const targetFrameRef = useRef(1);
   const displayedFrameRef = useRef(1);
   const isPreloadingRef = useRef(true);
@@ -83,63 +82,34 @@ export function TransformationFilm() {
     return Math.round(Math.max(1, Math.min(frameNum, FRAME_COUNT)));
   };
 
-  // Calculate alpha bounding box for subject-based scaling
-  const getAlphaBounds = (img: HTMLImageElement): { x: number; y: number; width: number; height: number } => {
-    const bounds = alphaBoundsRef.current.get(frameImagesRef.current.size);
-    if (bounds) return bounds;
+  // Calculate horizontal offset for subject positioning during sequence
+  const getFrameOffset = (frameNum: number): { x: number; y: number; scale: number } => {
+    // During running (frames 1-30): dog on left side
+    // During transformation (frames 30-90): transition to center
+    // During final (frames 90-125): centered hero reveal
 
-    const tempCanvas = document.createElement("canvas");
-    tempCanvas.width = img.naturalWidth;
-    tempCanvas.height = img.naturalHeight;
-    const tempCtx = tempCanvas.getContext("2d");
-    if (!tempCtx) return { x: 0, y: 0, width: img.naturalWidth, height: img.naturalHeight };
+    let offsetX: number;
+    let offsetY: number;
+    let scale: number;
 
-    tempCtx.drawImage(img, 0, 0);
-    const imageData = tempCtx.getImageData(0, 0, img.naturalWidth, img.naturalHeight);
-    const data = imageData.data;
-
-    let minX = img.naturalWidth, maxX = 0;
-    let minY = img.naturalHeight, maxY = 0;
-
-    for (let i = 3; i < data.length; i += 4) {
-      if (data[i] > 10) {
-        const pixelIndex = (i - 3) / 4;
-        const x = pixelIndex % img.naturalWidth;
-        const y = Math.floor(pixelIndex / img.naturalWidth);
-        minX = Math.min(minX, x);
-        maxX = Math.max(maxX, x);
-        minY = Math.min(minY, y);
-        maxY = Math.max(maxY, y);
-      }
-    }
-
-    if (minX > maxX) {
-      return { x: 0, y: 0, width: img.naturalWidth, height: img.naturalHeight };
-    }
-
-    const bounds_result = {
-      x: minX,
-      y: minY,
-      width: maxX - minX + 1,
-      height: maxY - minY + 1,
-    };
-
-    alphaBoundsRef.current.set(frameImagesRef.current.size, bounds_result);
-    return bounds_result;
-  };
-
-  // Calculate horizontal position based on frame progression (left to center)
-  const getHorizontalOffset = (frameNum: number): number => {
     if (frameNum < 30) {
-      return 0.25 + (frameNum / 30) * 0.1;
+      offsetX = -200 + (frameNum / 30) * 120;
+      offsetY = 0;
+      scale = 3.5;
     } else if (frameNum < 90) {
-      return 0.35 + ((frameNum - 30) / 60) * 0.15;
+      offsetX = -80 + ((frameNum - 30) / 60) * 80;
+      offsetY = 0;
+      scale = 3.5 + ((frameNum - 30) / 60) * 0.5;
     } else {
-      return 0.5;
+      offsetX = 0;
+      offsetY = 0;
+      scale = 4.0;
     }
+
+    return { x: offsetX, y: offsetY, scale };
   };
 
-  // Canvas rendering for transparent frame display with alpha-based scaling
+  // Canvas rendering with full-frame source, cinematic scale, and dynamic positioning
   const renderFrame = (frameNum: number) => {
     if (!canvasRef.current) return;
 
@@ -157,25 +127,17 @@ export function TransformationFilm() {
 
     ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
 
-    const bounds = getAlphaBounds(img);
     const canvasWidth = canvas.offsetWidth;
     const canvasHeight = canvas.offsetHeight;
+    const { x: offsetX, y: offsetY, scale } = getFrameOffset(frameNum);
 
-    const targetWidth = canvasWidth * 0.4;
-    const subjectAspect = bounds.width / bounds.height;
-    let renderWidth = targetWidth;
-    let renderHeight = targetWidth / subjectAspect;
+    const renderWidth = img.naturalWidth * scale / dpr;
+    const renderHeight = img.naturalHeight * scale / dpr;
 
-    if (renderHeight > canvasHeight * 0.8) {
-      renderHeight = canvasHeight * 0.8;
-      renderWidth = renderHeight * subjectAspect;
-    }
+    const x = canvasWidth / 2 - renderWidth / 2 + offsetX;
+    const y = canvasHeight / 2 - renderHeight / 2 + offsetY;
 
-    const hOffset = getHorizontalOffset(frameNum);
-    const x = canvasWidth * hOffset - renderWidth / 2;
-    const y = (canvasHeight - renderHeight) / 2;
-
-    ctx.drawImage(img, bounds.x, bounds.y, bounds.width, bounds.height, x, y, renderWidth, renderHeight);
+    ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, x, y, renderWidth, renderHeight);
   };
 
   // Smooth frame interpolation using RAF
