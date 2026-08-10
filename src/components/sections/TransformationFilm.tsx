@@ -56,6 +56,33 @@ export function TransformationFilm() {
     preloadFrames();
   }, []);
 
+  // Non-linear frame mapping for cinematic pacing
+  const mapScrollProgressToFrameIndex = (progress: number): number => {
+    // progress is 0-1 representing scroll position
+    // Map to frame index (0-76) with non-linear zones:
+    // 0.00-0.25: frames 0-20   (dog running - 21 frames over 100vh)
+    // 0.25-0.45: frames 20-35  (approach to flash - 15 frames over 80vh)
+    // 0.45-0.70: frames 35-55  (flash/transformation - 20 frames over 100vh)
+    // 0.70-0.85: frames 55-68  (artwork/product - 13 frames over 60vh)
+    // 0.85-1.00: frames 68-76  (final mug hold - 8 frames over 60vh)
+
+    let frameIndex: number;
+
+    if (progress < 0.25) {
+      frameIndex = (progress / 0.25) * 20;
+    } else if (progress < 0.45) {
+      frameIndex = 20 + ((progress - 0.25) / 0.2) * 15;
+    } else if (progress < 0.7) {
+      frameIndex = 35 + ((progress - 0.45) / 0.25) * 20;
+    } else if (progress < 0.85) {
+      frameIndex = 55 + ((progress - 0.7) / 0.15) * 13;
+    } else {
+      frameIndex = 68 + ((progress - 0.85) / 0.15) * 8;
+    }
+
+    return Math.round(Math.max(0, Math.min(frameIndex, AVAILABLE_FRAMES.length - 1)));
+  };
+
   // Canvas rendering for frame display
   const renderFrame = (frameIndex: number) => {
     if (!canvasRef.current) return;
@@ -135,13 +162,13 @@ export function TransformationFilm() {
           scrollTrigger: {
             trigger: sectionRef.current,
             start: "top top",
-            end: "+=180vh",
+            end: "+=400vh",
             scrub: 1.2,
             pin: true,
             anticipatePin: 1,
             onUpdate: (self) => {
               const progress = self.progress;
-              const frameIndex = Math.round(progress * (AVAILABLE_FRAMES.length - 1));
+              const frameIndex = mapScrollProgressToFrameIndex(progress);
 
               if (frameIndex !== currentFrameIndexRef.current) {
                 currentFrameIndexRef.current = frameIndex;
