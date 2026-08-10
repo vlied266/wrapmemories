@@ -1,7 +1,7 @@
 import { Navigation } from "@/components/layout/Navigation";
 import { Footer } from "@/components/layout/Footer";
 import { Hero } from "@/components/sections/Hero";
-import { TransformationStory } from "@/components/sections/TransformationStory";
+import { TransformationFilm } from "@/components/sections/TransformationFilm";
 import { AudienceSection } from "@/components/sections/AudienceSection";
 import { PersonalizationStudio } from "@/components/sections/PersonalizationStudio";
 import { ProductReveal } from "@/components/sections/ProductReveal";
@@ -17,7 +17,7 @@ export default function Home() {
       <Navigation />
       <main>
         <Hero />
-        <TransformationStory />
+        <TransformationFilm />
         <AudienceSection />
         <PersonalizationStudio />
         <ProductReveal />
