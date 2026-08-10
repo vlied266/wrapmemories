@@ -96,15 +96,15 @@ export function TransformationFilm() {
     if (frameNum < 30) {
       destX = 0;
       destY = 0;
-      renderScale = 0.7;
+      renderScale = 0.35;
     } else if (frameNum < 90) {
       destX = 0;
       destY = 0;
-      renderScale = 0.7 + ((frameNum - 30) / 60) * 0.05;
+      renderScale = 0.35 + ((frameNum - 30) / 60) * 0.025;
     } else {
       destX = 0;
       destY = 0;
-      renderScale = 0.75;
+      renderScale = 0.375;
     }
 
     return { destX, destY, renderScale };
